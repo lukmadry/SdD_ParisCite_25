@@ -1,0 +1,302 @@
+---
+title: "TP2 - le semaine du 20 janvier"
+author: "Łukasz Mądry"
+date: "2025-01-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Vecteurs, matrices, tableaux
+
+Les trois lignes qui suivent créent vecteurs qui contiennent les valeurs numeriques. Dans RStudio regardez à votre droite un panel "Environment". Là-bas vous pouvez trouver toutes les éléments qui vous avez créeé dans R depuis démarrage du programme. 
+
+On peut entrevoir les éléments dans "Environement" en utilisant un commande `ls()`. On va étudier l'influence de création de vecteurs sur ls(). 
+
+Comme vous avez pu voir en cours, il existent plusieurs façons de création de vecteurs, aucune n'est forcément mieux que les autres et dans la plupart de situations il n'y a pas de vrai difference d'entre eux.
+
+```{r}
+ls()
+## [1] "has_annotations" "opts"            "params"          "pck"            
+## [5] "to_be_loaded"
+x <- c(1, 2, 12)
+y <- 5:7
+z <- 10:1
+x ; y ; z 
+## [1]  1  2 12
+## [1] 5 6 7
+##  [1] 10  9  8  7  6  5  4  3  2  1
+ls()
+```
+
+Qu'est ce que va se passer si on va créer un nouveau élément en assignant le valeur d'un élément qui déjà existe ?
+
+```{r}
+w <- y
+
+ls()
+```
+
+On voit qu'un nouveau élément a été créé. Par contre, sa valeur est identique à un element qui a déjà existé.
+
+On peut aussi créer un vecteur numerique avec une fonction `seq`
+
+```{r}
+seq(1, 10)
+seq(1, 20, 2)
+seq(10, 1, -1)
+rep(55, 10)
+```
+
+Notons qu'on n'a pas sauvegardé les valeurs - on peut le vérifier en regardant le résultat de `ls()`. 
+### Exercice 
+
+* Essayer `w=y` et `w==y`
+* Interpreter `identical(w,y)`, possiblement s'en aidant avec `help('identical')`
+
+## Modification des vecteurs
+
+Il est très commun d'avoir besoin de modifier les vecteurs, par exemple prendre une partie d'un vecteur. 
+
+
+Étudier les lignes qui suivent. On utilise ici les commandes diverses afin de prendre un partie d'un vecteur. 
+
+```{r}
+z[1]   # Une partie de longueur 1
+## [1] 10
+z[0]   # On s'attend à quoi ?
+## integer(0)
+z[x]   # Longueur ??? index error ?
+z[y]
+z[x %% 2] 
+## [1] 10
+z[0 == (x %% 2)] # ici on utilise un masque binaire
+## [1] 9 8 6 5 3 2
+z[c(2, 1, 1)]
+## [1]  9 10 10
+```
+
+Voila un exemple qui montre qu'il faut faire attention au usage des masques. Notons que la longueur d'un masque n'est pas la même que celle de `x`.
+
+```{r}
+x[z > 5]
+```
+
+
+On peut aussi comparer les vecteurs
+
+```{r}
+w == x
+w == y
+
+z == y[-1]
+```
+
+C'est aussi une façon de créer un masque parce qu'on va obtenir un vecteur des valeurs logiques. Le prochaine exemple montre comment faire la repetition dans le vecteur. 
+
+```{r}
+rep(x, 2)
+rep(x, each=2)
+```
+
+Parfois on peut avoir une situation ou on ne connait pas à priori la longueur d'un vecteur. Pour ça on va se servir d'une fonction `length`
+
+```{r}
+length(z)
+```
+
+### Exercice
+
+* Créer un vecteur allant de 1 à 100 par pas de 2
+* Créer un masque qui va prendre toutes les indices dont le reste de division par 3 est egale à 1
+* Récrire le resultat en utilisant la fonction `seq`, sans passant par l'étape intérmediare d'un point 2.
+
+
+## Calcul
+
+On va maintenant apprendre comment effectuer les calculs sur les vecteurs. Regardez quelques exemples et essayez de comprendre ce qui se passe.
+
+```{r}
+u <- seq(1, 10, 1)
+v <- seq(10, 1, -1)
+
+u + v
+3*u
+u - 2
+u/v
+v/u
+1/u
+u*v
+sum(u+v)
+prod(u)
+cumsum(u)
+```
+
+### Exercices
+
+* Pour $n \in \mathbb{N}$ fixe, calculer le factoriel $n!$
+* Calculer le produit scalaire entre deux vecteurs (par exemple `u` et `v` au-dessus)
+* Approximer $\sum_{i=1}^{\infty} 1/n^2$ avec l'erreur $10^{-3}$.
+
+## Matrices
+
+Finalement on va etudier les matrices et tableaux de données. On peut créer une matrice avec un commande `matrix`. 
+
+```{r}
+m <- matrix(nrow=4, ncol=5) # on peut creer une matrice vide
+```
+
+quelques exemples de création de matrix
+```{r}
+M <- matrix(data = 1:20, nrow=4, ncol=5)
+M
+matrix(data = 1:7, nrow=4, ncol=5)
+```
+
+Le dernière exemple sert à rappeler que R ne vas pas indiquer une erreur si la longueur d'un vecteurs de données n'est pas la multiple de nrow ou ncol, mais il va quand même remplir le matrice avec des valeurs arrangés par colonnes. C'est un comportement dont il faut être conscient (mon avis personnel est que c'est l'une de raisons pour lesquelles R n'est pas une langage de programmation raisonnable). 
+
+
+```{r}
+matrix(1, nrow=2, ncol=3)
+t(M)
+```
+
+On peut aussi créer une matrice en donnant le nombre de lignes et les donnes. Le nombre de colonnes sera deduit automatiquement.
+```{r}
+matrix(1:50, nrow=5)
+```
+
+autres modalités de création de matrice
+```{r}
+A <- matrix(1, nrow=5, ncol=2) ; A
+
+A[] <- 1:15 ; A
+
+```
+
+On peut aussi indexer les matrices
+```{r}
+M[1,]
+M[1:3, 2:4]
+M[,4]
+```
+
+Pour connaitre la taille d'une matrice, on peut utiliser `dim` et `length`. Notons qu'une fonction `length` renvoie le nombre de toutes les éléments dans une matrice. 
+```{r}
+dim(M)
+length(M)
+```
+
+On peut facilement prendre une diagonale d'une matrice.
+```{r}
+mm <- matrix(1:9, nrow=3)
+diag(mm)
+```
+
+On peut aussi donner les noms aux colonnes et lignes
+
+```{r}
+colnames(mm) <- c('A', 'B', 'C')
+```
+
+Bien sur dans R on peut aussi multiplier des matrices:
+```{r}
+A <- matrix(1:4, nrow=2)
+B <- matrix(2:5, nrow=2)
+
+A %*% B
+A * B
+```
+
+### Exercices
+
+* Construire la matrice de taille 10×3 dont la première colonne ne contient que des 1, la
+deuxième que des 2 et la troisième que des 3. Indication - utiliser `rep` que vous avez vu à l'occasion de creation de vecteurs
+* Soit $A,B$ deux matrices telles que le produit $A \times B^T$ est bien défini. Calculer en $R$ le produit Hilbert-Schimdt defini par $\text{trace}( A \times B^T)$. Vous pouvez commencer avec $A,B$ des matrices quadratiques
+
+## Listes
+
+Il existe aussi une fonctionnalite appele "list" qui peut etre largement resume comme une vecteur avec des noms.
+
+```{r}
+p <- c(2, 7, 8)
+q <- c("A", "B", "C")
+x <- list(p, q)
+x
+## [[1]]
+## [1] 2 7 8
+## 
+## [[2]]
+## [1] "A" "B" "C"
+length(x)
+## [1] 2
+rlang::is_vector(x)
+## [1] TRUE
+rlang::is_atomic(x)
+## [1] FALSE
+y <- c(p, q)
+y
+## [1] "2" "7" "8" "A" "B" "C"
+length(y)
+## [1] 6
+rlang::is_atomic(y)
+## [1] TRUE
+rlang::is_list(y)
+## [1] FALSE
+```
+
+
+### Exercices
+
+* Comment creer une liste avec `p,q,x`
+* Essayez de deviner avant de lancer une code - qu'est ce que `x[2]`
+* Comparer le avec `x[[2]]`.
+
+## Tableaux de donnees
+
+data.frame : tableau de données, matrice dont chaque colonne, qui possède un nom, correspond à une variable, les lignes correspondant aux individus
+
+```{r}
+c=data.frame(a=gl(2,5,10), b=1:10, x=seq(1,20,2))
+c$a; c[,1]
+c$b; c[,2]
+c$x; c[,3]
+names(c)
+rownames(c)
+```
+
+On a utilise ici une fonction `gl` afin de creer une large matrice. Essayez de comprendre sa fonctionnement avec `?gl`
+
+```{r}
+head(c)
+```
+
+### Exercices
+
+* Transformer une matrice que vous avez créeé plus tot en le tableau de données
+* Demander à R d’afficher la dernière colonne du dataframe, et la première ligne.
+
+
+### Plus d'exercices au cas ou vous avez fini avant l'heure
+
+Refléchissez aux questions suivantes. Le mieux serait d'essayer de donner la reponse avant que vous lanciez un code R.
+
+* Considerons `y<-5` et `y <- 5`, `y < -5`. Auquel comportement vous vous attendez ? Verifiez.
+
+Soit `x` un vecteur numerique.
+* Qu'est ce qu'est x[c()]? Est-ce la meme chose que x[]?
+• Est-ce x[c(1, 1, 1)] equivalent a x[1]?
+• Pareil pour x[1] et x["1"]?
+• x[c(-1, -1, -1)] et x[-1]?
+• Que'est ce que fait x[c(0, 1, 2, NA)]  ?
+• Le resultat de x[0] ?
+• De meme pour x[1, 2, 3] ?
+• Et x[c(0, -1, -2)],  x[c(-1, -2, NA)] ?
+• Pourquoi x[NA] et different que x[c(1, NA)] ?
+• Qu'est ce qu'est x[c(FALSE, TRUE, 2)] ?
+• Qu'est ce qu'on va obtenir par x[x<min(x)] ?
+• Et x[length(x)+1] ?
+
+Si vous etêz arrivé là, vous pouvez commencer TP3.

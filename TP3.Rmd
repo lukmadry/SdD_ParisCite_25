@@ -1,0 +1,232 @@
+---
+title: "TP3 - la semaine du 27 janvier"
+author: "Łukasz Mądry"
+output: html_notebook
+---
+
+# Boucles
+
+`R` dispose de modalités de controle de code habituels, telles que `if` et les boucles `for` et `while`.
+
+On va commencer avec `if` et `for`. Pour le première, l'idée est qu'on va vérifier une condition, et selon ce résultat on va proceder dans une façon ou d'autre (ou ne va rien faire ). Le deuxième nous permets de traverser les vecteurs, listes, tableaux et appliquer ces partie du code à chaque élément consideré.
+
+Rergardons un exemple:
+
+```{r}
+count <- 0
+x <- 1:10
+
+for (i in 1:10){
+  if (x[i] %% 2 == 1)
+    count <- count + 1
+}
+
+```
+
+Essayez de deviner la valeur de variable `count` avant que vous lancez une code.
+
+On peut achever le même résultat avec une boucle `while`.
+
+```{r}
+count2 <- 0
+i <- 1
+x <- 1:10
+while (i < 10){
+  if (x[i] %% 2 == 1){
+    count2 <- count2 + 1
+  }
+  i <- i+1
+}
+
+identical(count, count2)
+```
+
+#### ATTENTION
+
+Il faut faire attention aux modalités d'usage de `if`. Par exemple, prenons `x` du code précédent. Qu'est ce que va se passer si on va écrire `x>0`? Pouvez-vous deviner le resultat avant que vous lanciez le code ?
+
+```{r}
+val <- 0
+if (x >0)
+  val <- 1
+```
+
+Une deuxième chose important est comment `R` va traiter les condition nulles. Par exemple, notons que en `R`, contrairement a Python, l'indices commencent de 1, pas du 0. Alors `x[0]` est nulle. Qu'est ce que va se passer dans le code ci-dessous ?
+
+```{r}
+val <- 0
+if (x[0] > 0)
+  val <- 0
+```
+
+### Exercices
+
+-   Soit `x` une vecteur de valeurs numériques. Comment trouver une valeur minimal ? Comment trouver trouver la position d'une valeur minimal ? Écrire avec les boucles `for` ou `while` et conditionnement `if`
+-   Avec une boucle `while` écrire un code qui va verifier si un vecteur est croissant.
+
+# Fonctions
+
+Pour résumer le plus simple possible, les fonctions sont utiles pour reproduire le code qu'on peut utiliser plus qu'une fois, mais aussi pour les raisons d'organisation
+
+```{r}
+mult <- function(x) {
+  2*x
+}
+
+mult(5)
+mult(1:10)
+mult(matrix(1:10, nrow=2))
+```
+
+On vient de voir qu'une fonction peut être intérpreté differement selon l'argument.
+
+### Exercices
+
+-   Écrire une fonction qui va vérifier si une vecteur est decroissant
+-   Avec les boucles écrire vos versions des fonctions `diff`, `seq`.
+-   Écrire une fonction qui pour une vecteur `x` va calculer le coefficient de Gini, donné par:
+
+$$ G(x_1, ..., x_n) = \frac{\sum_{i=1}^n (n-2i+1)x_i}{(n-1) \sum_{i=1}^n x_i} $$
+
+-   Écrire une fonction qui pour les nombres réels donnés `a,b` et un vecteur `x` va verifier si chaque element de `x` appartient a l'intervalle `[a,b]`. Écrire deux versions : l'une qui va renvoyer une seul valeur binaire - `TRUE` si toutes elements appartient a `[a,b]` et `FALSE` sinon. Deuxième version doit renvoyer un vecteur binaire `y` de meme longueur que `x` - si `x[i] \in [a,b]` alors `y[i] = TRUE`, et `y[i] = FALSE` sinon.
+
+# Manipulation de tableaux avec `dplyr`
+
+D'abord on va charger les packages nécessaires
+
+```{r}
+to_be_loaded <- c('nycflights13', 'tidyverse', 'dplyr', 'lubridate')
+for (p in to_be_loaded){
+  library(p, character.only = TRUE)
+}
+```
+
+On va ensuite renommer les variables
+
+```{r}
+flights <- nycflights13::flights
+```
+
+```{r}
+dim(flights)
+```
+
+```{r}
+head(flights)
+```
+
+```{r}
+filter(flights, arr_delay > 120)
+```
+
+```{r}
+unique(flights$dest)
+```
+
+```{r}
+filter(flights, arr_delay > 120 & dest == "IAH" & dep_delay > 120)
+```
+
+Avant qu'on va s'en prendre au `nycflights` on va d'abord s'entrainer sur le tableau plus petit.
+
+```{r}
+library(datasets)
+```
+
+```{r}
+head(iris)
+```
+
+```{r}
+filter(iris, Sepal.Length - Sepal.Width > 1.5 & Petal.Length - Petal.Width > 1.5)
+```
+
+```{r}
+iris %>% group_by(Species) %>% summarise_all(mean)
+```
+
+#### Autres fonctions
+
+```{r}
+selected <- select(iris, Sepal.Length, Sepal.Width, Petal.Length)
+# select all columns from sepal.length to petal.length
+selected2 <- select(iris, Sepal.Length:Petal.Length)
+head(selected, 3)
+identical(selected, selected2)
+```
+
+```{r}
+iris %>% slice(3:10)
+```
+
+```{r}
+iris %>% select(contains("Sepal"))
+```
+
+```{r}
+newCol <- mutate(iris, greater.half = Sepal.Width > 0.5 * Sepal.Length)
+```
+
+Q: Combien de lignes satisfient cet condition ?
+
+```{r}
+newCol <- arrange(newCol, Petal.Width)
+head(newCol)
+```
+
+```{r}
+arr.virg <- newCol %>% filter(Species == "virginica") %>%
+  arrange(Sepal.Width)
+arr.virg[30:35,] 
+```
+
+```{r}
+summarise(arr.virg, mean.length = mean(Sepal.Length, na.rm = TRUE))
+```
+
+
+### Exercices
+
+-   adapter le code au-dessus pour ajouter une nouvelle etape - calculer une moyenne d'une colonne qui n'existe pas encore et on va le créer, donc combiner ca avec fonction `mutate`. A titre d'exemple on peut considerer colonne qui va contenir la valeur de 3/4 \* Sepal.Length + 1/4 \* Sepal.Width
+
+-   ajouter les valeurs numériques aux facteurs dans colonne "Species", par ex. 1 au "virginica", 2 a "setosa" etc et calculer la moyenne de "Sepal.Width" avec le poids calculés à partir de ces facteurs numeriques. 
+
+## NYC Flights
+
+Trouver toutes les vols dans `nycflights13` qui
+
+-   sont partis pendant l'été
+
+-   sont arrives deux heures en retard mais sont partis à l'heure
+
+-   sont partis au moins une heure en retard mais qui ont rattrapé ce retard par au moins demi heure
+
+-   sont partis entre minuit et 6h du matin
+
+-   sont attires entre 6h et 8h du soir et sont partis de 'EWR', 'JFK' ou 'LGA'
+
+-   Trouver toutes les vols qui ont parcouru la distance supérieure que 600 miles et qui ont attent la vitesse supérieure que 475 miles par heure. Trier en ordre decroissant de vitesse
+
+-   Ajouter une nouvelle colonne "speed" (ang. "vitesse") en km par heure. TODO : convert miles to kms
+
+### Plus d'exercices au cas où vous avez fini avant l'heure
+
+
+* Écrire une fonction qui pour un vecteur `x` va trouver 5 les plus grands elements. 
+* Écrire une fonction qui pour deux vecteurs `x`, `y` va calculer une correlation de Spearman donné par
+
+\[ \rho(x,y) = 1- \frac{6 \sum_{i=1}^n d_i^2}{n(n^2-1)} \]
+
+où $d_i = r_i - s_i$ et $r_i, s_i$ signifient les rangs de $x_i, y_i$.
+
+* soit `p` un vecteur de longueur `n` qui contient les valeurs entre `0` et `1`. Soit `y` un vecteur binaire de meme longueur. Calculer 
+
+\[ L(p, q) = \frac{1}{n} \sum_{i=1}^n \ell_i \quad \ell_i = \begin{cases} - \log p_i & y_i = TRUE \\ - \log(1-p_i) & y_i = FALSE \end{cases} \]
+
+* Écrire une fonction qui va avoir le meme comportement que `which`.
+* Avec `diff` et `order` écrire une fonction qui va avoir le meme comportement que `duplicate` (en cas de doutes vous pouvez vous aider avec l'aide de R)
+
+Si vous avez arrivé jusqu'ici, vous pouvez démarrer TP4
+
+Si cela vous interesse et n'avez pas de problème avec l'anglais, vous pouvez trouver plus d'exercices intéressants ici : https://deepr.gagolewski.com/deepr.pdf
+
