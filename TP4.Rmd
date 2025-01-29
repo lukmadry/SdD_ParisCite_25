@@ -1,0 +1,245 @@
+---
+title: "TP4 - la semaine de 3 fevrier"
+author: "Łukasz Mądry"
+date: "2025-01-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(nycflights13)
+library(dplyr)
+library(tidyverse)
+flights <- nycflights13::flights
+```
+
+# Dplyr avance
+
+Si vous n'avez eu du temps d'en finir, vous pouvez continuer ici avec les exercices de `dplyr` de TP3.
+
+On peut appeller `summarise` avec plusieurs colonnes et fonctions, avec `summarise_at(data, vars(...), funs(...))`
+
+```{r}
+summarise_at(flights,
+             vars(dep_delay, arr_delay),
+             funs(mean, median, sd),
+             na.rm = TRUE)
+```
+
+En plus des fonctions telles que min(), max(), …, median() etc., on peut aussi utiliser des fonctions suivantes, qui se trouvent dans le package dplyr:
+
+n(): le nombre d'observations dans le groupe
+
+n_distinct(x) : le nombre de valeurs uniques dans `x`
+
+first(x), last(x) et nth(x, n) - ceux fonctionnent pareil à x[1], x[length(x)], et x[n] mais donnent plus de controle sur le resultat s'il s'agit du élément vide.
+
+
+```{r}
+destinations <- group_by(flights, dest)
+
+summarise(destinations,
+  planes = n_distinct(tailnum),
+  flights = n()
+)
+```
+
+```{r}
+daily <- group_by(flights, year, month, day)
+
+# Tabulate number of flights on each day
+per_day   <- summarise(daily, flights = n())
+per_day
+```
+
+```{r}
+per_month <- summarise(per_day, flights = sum(flights))
+per_month
+```
+
+On peut aussi distinguer les cas distinctes dans notre tableau.
+```{r}
+distinct(flights, tailnum)
+```
+
+Combien de pairs distincts origin-destination peut-on trouver ?
+```{r}
+distinct(flights, origin, dest)
+```
+
+Question : on a un vecteur `x` qui contient certains valeurs dans l'autre vecteur `y`. Pour exemple on sait que `y = seq(20, 40)` et on sait que `x = sample(50)`. Comment, en utilisant une fonction `distinct` ou `unique` on peut vérifier si `x` contient toutes les valeurs de `y` ? Notons que `dplyr::distinct` ne fonctionne que pour les data.frame (tableaux de données), et c'est pourquoi dans le code ci-dessous on a transformé `x` en data.frame. 
+
+
+```{r}
+y <- seq(20, 40)
+x <- sample(seq(20,40), size=35, replace=TRUE)
+
+# votre code pour unique ici, pas de besoin de transformer en df.
+
+# le meme resultat si on veut utiliser `distinct`
+x <- data.frame(x)
+
+# votre code ici - attention, si vous utilisez une fonction `length` (ang. longueur) elle va vous donner 1 pour les df, il faut utiliser `count`
+```
+
+Pour chaque compagnie d'avion, calculer la proportion de vols annulés. 
+
+Trouver les compagnies d'avion qui:
+
+1. desservent au moins 10 destinations distincts
+2. ne desservent pas toutes les aeroports d'origin
+3. desservent à la fois ATL et LAX ,
+4. desservent à la fois ATL et LAX mais ne dessert pas aucune d'entre IAH et HNL
+
+
+Trouver toutes les destinations qui sont desservis chaque jour de juin à partir d'au moins un d'aeroport de New York.
+
+Quel compagnie d'avion controle l'avion ( tailnum ) qui dessert le nombre le plus grand de destinations distinct ?
+
+# Ungroup
+
+Parfois après avoir utilisé le commande `group_by` il faut "dégrouper" les données. Pour ça on va se sérvir une fonction `ungroup`. Voilà un exemple. 
+
+```{r}
+daily <- group_by(flights, year, month, day)
+
+daily # tableau groupé
+
+daily %>% ungroup() # maintenant c'est un tableau ordinaire
+```
+
+# Dplyr et ggplot
+
+Dans cette section on va joindre `ggplot` et `dplyr` pour créer des graphiques à partir de tableaux de données. 
+
+```{r}
+by_tailnum <- group_by(flights, tailnum)
+delay <- summarise(by_tailnum,
+  count = n(),
+  dist = mean(distance, na.rm = TRUE),
+  delay = mean(arr_delay, na.rm = TRUE))
+
+# Subset the data to only include frequently flown planes
+# and distances < 3000 
+delay <- filter(delay, count > 20, dist < 3000)
+
+# Plot
+ggplot(delay, aes(dist, delay)) +
+  geom_point(aes(size = count), alpha = 1/2) +
+  geom_smooth() +
+  scale_size_area()
+```
+
+On peut aussi enchainer `dplyr` avec `ggplot2` :
+
+```{r}
+flights %>% 
+  group_by(origin) %>%
+  summarise(av_dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  ggplot(aes(x = origin, y = av_dep_delay)) + 
+  geom_bar(stat = "identity") +
+  ylab("Average departure delay") +
+  xlab("Origin airport")
+```
+
+### Exercices avec ggplot
+
+* Dans une chaine produire une graphique qui aura retard moyen de departure sur l'axe Y et l'aeroport de destination sur l'axe X, l'aéroport d'origine sera 'JFK' et la taille de points sera calculé à partir d'un nombre de departures.
+
+
+Commencez avec (bien entendu ça ne donne pas encore un résultat souhaité):
+```{r}
+flights %>% 
+  group_by(dest, origin) %>%
+  summarise(av_dep_delay = mean(dep_delay, na.rm = TRUE),
+            count = n()) %>%
+  ungroup() 
+```
+
+### Exercices avec filtrage
+
+* Trouver les vols qui ont eu le plus de retard
+
+* Grouper les destination et trouver les destination les plus populaires
+
+* Calculer le retard relative (arr_delay / sum(arr_delay)) pour chaque groupe
+
+* Est-ce que vous pouvez trouver les vols qui sont susceptibles d'être un erreur, par exemple le temps passé en l'air est trop court.
+
+## Joins 
+
+Comme le tableau de donnees `flights` est très grand, on va se limiter a un tableu reduit
+
+```{r}
+flights2 <- flights |> 
+  select(year, time_hour, origin, dest, tailnum, carrier)
+```
+
+L'idée est que `flights` contient une colonne `carrier` qui identifie uniquement la compagnie d'avion. Par consequent on pourra ajouter l'information sur eux venant d'autres tableaux de donnes, sous reserve que les noms pour les compagnies d'avions sont identiques. 
+
+```{r}
+flights2 |>
+  left_join(airlines)
+```
+`left_join` ici veut dire qu'on garde la structure d'un première tableau. Notons qu'il n'y a pas besoin de spécifier la colonne que les deux tableaux ont en commun, R va la déduire à partir de colonnes des tableaux.
+
+On pourra aussi joindre les autres tableaux:
+
+```{r}
+flights2 |> 
+  left_join(weather |> select(origin, time_hour, temp, wind_speed))
+```
+
+Ici on voit que les tableaux ont été joints par deux colonnes.
+
+### Joins avec les cles qu'il faut specifier
+
+Parfois on aura besoin de spécifier les clés de joinage. Par exemple
+
+```{r}
+flights2 |> 
+  left_join(planes)
+```
+
+On voit qu'on a trouvé beaucoup de colonnes nulles, c'est-à-dire avec les valeurs nulles `NA`. Ici cet erreur s'est produit parce que `year` dans `flights` est l'an ou le vol s'est passe, alors que dans `planes` c'est l'an ou l'avion a ete construit. En fait on veut joindre les deux avec `tailnum`
+
+```{r}
+flights2 |> 
+  left_join(planes, join_by(tailnum))
+```
+
+Notons qu'on a maintenant deux colonnes `year` - `year.x` et `year.y`. C'est un résultat souhaité parce que selon le tableau d'origine ces deux colonnes portent l'information differente. 
+
+### Joins avec le filtrage
+
+`semi_join` va garder toutes les lignes dans `x` qui ont la ligne correspondant dans `y`. Le code suivant va faire paraitre les aeroports d'origine. 
+
+```{r}
+airports |> 
+  semi_join(flights2, join_by(faa == origin))
+```
+
+### Exercices joins
+
+* Trouver deux jours ou les retards on ete les plus importants. Faire le join avec le tableau de donnees `weather`. Est-ce que vous etez en mesure d'etablir un lien ?
+
+* Est-ce que chaque vol a la données de meteo pour le moment du depart ?
+
+* Add the latitude and the longitude of the origin and destination airport to flights. Is it easier to rename the columns before or after the join?
+
+* Calculer le retard moyen par destination, ensuite faire joindre les donnes sur les aéroports et montre la distribution spatiale de retarts. Voila comment faire déssiner la carte de Etats-Unis: 
+
+```{r}
+airports |>
+  semi_join(flights, join_by(faa == dest)) |>
+  ggplot(aes(x = lon, y = lat)) +
+    borders("state") +
+    geom_point() +
+    coord_quickmap()
+```
+
+Vous pourrez eventuellement utiliser la taille ou couleur de points afin de faire paraitre le retard moyen pour chaque aeroport.
+
