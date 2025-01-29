@@ -1,5 +1,5 @@
 ---
-title: "TP2 - le semaine du 20 janvier"
+title: "TP2 - la semaine du 20 janvier"
 author: "Łukasz Mądry"
 date: "2025-01-21"
 output: html_document
@@ -136,13 +136,13 @@ cumsum(u)
 
 ### Exercices
 
-* Pour $n \in \mathbb{N}$ fixe, calculer le factoriel $n!$
+* Pour $n \in \mathbb{N}$ fixé, calculer le factoriel $n!$
 * Calculer le produit scalaire entre deux vecteurs (par exemple `u` et `v` au-dessus)
 * Approximer $\sum_{i=1}^{\infty} 1/n^2$ avec l'erreur $10^{-3}$.
 
 ## Matrices
 
-Finalement on va etudier les matrices et tableaux de données. On peut créer une matrice avec un commande `matrix`. 
+Finalement on va étudier les matrices et tableaux de données. On peut créer une matrice avec un commande `matrix`. 
 
 ```{r}
 m <- matrix(nrow=4, ncol=5) # on peut creer une matrice vide
@@ -279,20 +279,20 @@ head(c)
 * Demander à R d’afficher la dernière colonne du dataframe, et la première ligne.
 
 
-### Plus d'exercices au cas ou vous avez fini avant l'heure
+### Plus d'exercices au cas où vous avez fini avant l'heure
 
 Refléchissez aux questions suivantes. Le mieux serait d'essayer de donner la reponse avant que vous lanciez un code R.
 
-* Considerons `y<-5` et `y <- 5`, `y < -5`. Auquel comportement vous vous attendez ? Verifiez.
+* Considerons `y<-5` et `y <- 5`, `y < -5`. Auquel comportement vous vous attendez ? Vérifiez.
 
-Soit `x` un vecteur numerique.
-* Qu'est ce qu'est x[c()]? Est-ce la meme chose que x[]?
-• Est-ce x[c(1, 1, 1)] equivalent a x[1]?
+Soit `x` un vecteur numérique.
+* Qu'est ce qu'est x[c()]? Est-ce la même chose que x[]?
+• Est-ce x[c(1, 1, 1)] équivalent a x[1]?
 • Pareil pour x[1] et x["1"]?
 • x[c(-1, -1, -1)] et x[-1]?
 • Que'est ce que fait x[c(0, 1, 2, NA)]  ?
 • Le resultat de x[0] ?
-• De meme pour x[1, 2, 3] ?
+• De même pour x[1, 2, 3] ?
 • Et x[c(0, -1, -2)],  x[c(-1, -2, NA)] ?
 • Pourquoi x[NA] et different que x[c(1, NA)] ?
 • Qu'est ce qu'est x[c(FALSE, TRUE, 2)] ?
