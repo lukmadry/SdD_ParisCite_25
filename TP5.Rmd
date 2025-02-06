@@ -1,0 +1,12 @@
+---
+title: "TP5 - la semaine de 10 fevrier"
+author: "Łukasz Mądry"
+date: "2025-01-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+L'idee c'est de reproduire le code de Stephane https://stephane-v-boucheron.fr/labs/scidon/_handout/lab-babynames.html

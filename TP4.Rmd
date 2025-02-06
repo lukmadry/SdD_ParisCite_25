@@ -115,6 +115,7 @@ daily %>% ungroup() # maintenant c'est un tableau ordinaire
 
 Dans cette section on va joindre `ggplot` et `dplyr` pour créer des graphiques à partir de tableaux de données. 
 
+
 ```{r}
 by_tailnum <- group_by(flights, tailnum)
 delay <- summarise(by_tailnum,
