@@ -16,6 +16,130 @@ library(tidyverse)
 flights <- nycflights13::flights
 ```
 
+
+# Manipulation de tableaux avec `dplyr`
+
+D'abord on va charger les packages nécessaires
+
+```{r}
+to_be_loaded <- c('nycflights13', 'tidyverse', 'dplyr', 'lubridate')
+for (p in to_be_loaded){
+  library(p, character.only = TRUE)
+}
+```
+
+On va ensuite renommer les variables
+
+```{r}
+flights <- nycflights13::flights
+```
+
+```{r}
+# dimensions de flights
+dim(flights)
+```
+
+```{r}
+# premiere quelques lignes de flights
+head(flights)
+```
+
+```{r}
+# vols qui on eu de retard plus que 120 minutes
+filter(flights, arr_delay > 120)
+```
+
+```{r}
+# les destinations uniques
+unique(flights$dest)
+```
+
+```{r}
+filter(flights, arr_delay > 120 & dest == "IAH" & dep_delay > 120)
+```
+
+Avant qu'on va s'en prendre au `nycflights` on va d'abord s'entrainer sur le tableau plus petit.
+
+```{r}
+library(datasets)
+```
+
+```{r}
+head(iris)
+```
+
+```{r}
+filter(iris, Sepal.Length - Sepal.Width > 1.5 & Petal.Length - Petal.Width > 1.5)
+```
+
+```{r}
+iris %>% group_by(Species) %>% summarise_all(mean)
+```
+
+#### Autres fonctions
+
+```{r}
+selected <- select(iris, Sepal.Length, Sepal.Width, Petal.Length)
+# select all columns from sepal.length to petal.length
+selected2 <- select(iris, Sepal.Length:Petal.Length)
+head(selected, 3)
+identical(selected, selected2)
+```
+
+```{r}
+iris %>% slice(3:10)
+```
+
+```{r}
+iris %>% select(contains("Sepal"))
+```
+
+```{r}
+newCol <- mutate(iris, greater.half = Sepal.Width > 0.5 * Sepal.Length)
+```
+
+Q: Combien de lignes satisfient cet condition ?
+
+```{r}
+newCol <- arrange(newCol, Petal.Width)
+head(newCol)
+```
+
+```{r}
+arr.virg <- newCol %>% filter(Species == "virginica") %>%
+  arrange(Sepal.Width)
+arr.virg[30:35,] 
+```
+
+```{r}
+summarise(arr.virg, mean.length = mean(Sepal.Length, na.rm = TRUE))
+```
+
+
+### Exercices
+
+-   adapter le code au-dessus pour ajouter une nouvelle etape - calculer une moyenne d'une colonne qui n'existe pas encore et on va le créer, donc combiner ca avec fonction `mutate`. A titre d'exemple on peut considerer colonne qui va contenir la valeur de 3/4 \* Sepal.Length + 1/4 \* Sepal.Width
+
+-   ajouter les valeurs numériques aux facteurs dans colonne "Species", par ex. 1 au "virginica", 2 a "setosa" etc et calculer la moyenne de "Sepal.Width" avec le poids calculés à partir de ces facteurs numeriques. 
+
+## NYC Flights
+
+Trouver toutes les vols dans `nycflights13` qui
+
+-   sont partis pendant l'été
+
+-   sont arrives deux heures en retard mais sont partis à l'heure
+
+-   sont partis au moins une heure en retard mais qui ont rattrapé ce retard par au moins demi heure
+
+-   sont partis entre minuit et 6h du matin
+
+-   sont attires entre 6h et 8h du soir et sont partis de 'EWR', 'JFK' ou 'LGA'
+
+-   Trouver toutes les vols qui ont parcouru la distance supérieure que 600 miles et qui ont attent la vitesse supérieure que 475 miles par heure. Trier en ordre decroissant de vitesse
+
+-   Ajouter une nouvelle colonne "speed" (ang. "vitesse") en km par heure. TODO : convert miles to kms
+
 # Dplyr avance
 
 Si vous n'avez eu du temps d'en finir, vous pouvez continuer ici avec les exercices de `dplyr` de TP3.
