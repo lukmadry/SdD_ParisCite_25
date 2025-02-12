@@ -1,0 +1,165 @@
+---
+title: "TP5 - la semaine de 10 fevrier"
+author: "Łukasz Mądry"
+date: "2025-02-04"
+output: html_document
+---
+
+
+```{r}
+#| include: true
+#| message: false
+#| warning: false
+require(patchwork)
+require(httr)
+require(glue)
+require(ineq)
+require(here)
+require(skimr)
+require(magrittr)
+require(tidyverse)
+
+old_theme <- theme_set(theme_minimal())
+```
+
+# Analyse exploratoire
+
+https://r4ds.hadley.nz/eda
+
+En cours, vous avez vu l'histogram. Voila l'exemple
+
+```{r}
+ggplot(diamonds, aes(x = carat)) +
+  geom_histogram(binwidth = 0.5)
+```
+
+Essayons de voir de diamonds plus petits 
+
+```{r}
+smaller <- diamonds |> 
+  filter(carat < 3)
+
+ggplot(smaller, aes(x = carat)) +
+  geom_histogram(binwidth = 0.01)
+```
+
+Il existe la possiblité que dans le tableau on pourra trouver les valeurs inhabituels, qui peuvent être un résultat d'erreur quelconque. 
+
+```{r}
+ggplot(diamonds, aes(x = y)) + 
+  geom_histogram(binwidth = 0.5) +
+  coord_cartesian(ylim = c(0, 50))
+```
+
+Ici on voit qu'il y a des diamonds dehors d'un groupe principal. On peut le sélectionner par le code suivant
+
+```{r}
+unusual <- diamonds |> 
+  filter(y < 3 | y > 20) |> 
+  select(price, x, y, z) |>
+  arrange(y)
+unusual
+```
+
+On peut faire d'histogram avec les valeurs NA
+
+```{r}
+nycflights13::flights |>   mutate(    cancelled = is.na(dep_time),    sched_hour = sched_dep_time %/% 100,    sched_min = sched_dep_time %% 100,    sched_dep_time = sched_hour + (sched_min / 60)  ) |>   ggplot(aes(x = sched_dep_time)) +   geom_freqpoly(aes(color = cancelled), binwidth = 1/4)
+```
+
+### Exercices 
+
+Explorer la distribution des prix. Est-ce que vous trouvez quelque chose abnormal ou surprennant ? Pensez à la longeur d'intervalle et assurez-vous de bien essayer beaucoup de valeurs differentes.
+
+Combien de diamonds sont à 0,99 carat ou 1 carat ? Pourquoi la difference ?
+
+Recréer la graphe de freauence de `scheduled_dep_time` colore en fonction d'annulation de vols. 
+
+### Les mesure de tendance centrales - la piege de moyenne et mediane
+
+Ici on va comparer le moyenne et mediane sur quelques examples. On va charger un tableau de donnees de salaires francaises, telecharge de site web d'INSEE, ici https://www.insee.fr/fr/statistiques/7656152?sommaire=7656168#consulter 
+
+```{r}
+df <- read.csv("t201.csv", sep=";", header = TRUE)
+head(df)
+```
+
+En cliquant sur "Dictionnaire" sur cet site, on peut se renseigner sur les noms de variables. Ce qui est important pour nous, c'est la variable $BRUT_EQTP qui signifie le salaire brut en equivalents temps plein.
+
+```{r}
+df %>% pull(BRUT_EQTP) %>% mean()
+df %>% pull(BRUT_EQTP) %>% median()
+```
+
+On voit que la moyenne est beaucoup plus elevee que la mediane. 
+
+```{r}
+df %>% group_by(SEXE)
+```
+
+Par la description sur la site, il s'agit de donnees agrege, donc une ligne ne correspond pas forcement a une personne vraie, mais plutot l'ensemble des personnes. C'est pourquoi on a un troisieme sexe : "Ensemble". 
+
+```{r}
+df %>% group_by(SEXE) %>% summarise(moyenne = mean(BRUT_EQTP), mediane = median(BRUT_EQTP))
+```
+
+### Exercices
+
+* Tracer un histogram ou `freqplot` par `ggplot`. D'abord un histogram pour toutes les categories confondus et ensuite deux histograms separes pour `H` et `F`. 
+* Modifier le code avec moyenne et mediane pour que ca fasse paraitre le salaire des gens en bas et en haut d'echelle salaire, par exemple les 10%, 20%, 30% les mieux et les moins renumeres. 
+* Vu qu'il s'agit de donnees agreges, est-ce qu'une bonne idee de telecharger des autres donnees de site INSEE et d'utiliser `join` ? 
+
+## Quand on peut s'attendre aux differences entre la mediane et moyenne ?
+
+Normalement si l'ensemble de donnees est tres asymettrique, la mediane ne sera pas egale a moyenne. Pour l'illustrer, on va se servir de donnees tires de quelques distributions connus.
+
+```{r}
+lambda <- 1
+data_exp <- rexp(1000, rate=1)
+
+hist(data_exp, breaks = 50)
+```
+
+```{r}
+sigma <- 2
+data_norm <- rnorm(1000, mean = 0, sd=sigma)
+
+hist(data_norm, breaks = 50)
+```
+
+```{r}
+print('mean of normal variable')
+mean(data_norm)
+
+print('median of normal variable')
+median(data_norm)
+
+print('mean of exponential variable')
+mean(data_exp)
+
+print('median of exponential variable')
+median(data_exp)
+```
+On voit que la variable normale a une moyenne a eu pres egale, mais ce n'est pas du tout un cas pour la variable exponentielle.
+
+### Exercices
+
+* Essayez de penser a une autre variable aleatoire que vous avez vue en cours de Proba qui est similaire en cette maniere a une variable exponentielle.
+* Ecrire une code pour trouver les quantiles. Comparer-les avec les valeurs obtenus theoriquement.
+
+* On va essayer de suivre une exemple bien plus extreme. Soit $X = (x_1, x_2, x_3, ..., x_N)$ avec $N$ tres grand une population des gens qui vont jouer une jeu d'hasard. Toute le monde commence avec le capital de 1, le jeu a toujours $k = 10$ etapes. Soit $C^i_k$ une capital de joeur $i$ apres $k$ etape. On fixe
+
+\[ \mathbb{P}(C^i_k = 2 C^i_{k-1}) = 1/2 \quad \mathbb{P}(C^i_k = 0) = 1/2  \]
+
+Autrement dit, avec probabilite $1/2$ on peut doubler notre capital ou tout perdre. Si on perds notre capital, on ne peut plus jouer parce que notre capital est egale a zero.
+
+Questions:
+
+** Ecrire une fonction qui va donner le resultat (aleatoire !) de jeu pour le capital de base 1.
+** Appliquer cette fonction aux $N=10000$ joueurs (si c'est trop lente, vous pouvez faire $N=1000$)
+** Combien de jouers finissent avec le capital plus grand que 10 ? Est-ce que consistent avec les prediction theoriques ? Calculer le moyenne, le mediane et les quantiles $1/10, 1/4, 3/4, 9/10$.
+** Tracer une histogram du capital possede par la population. En moyenne, est-ce qu'on a plus ou moins du capital ? Diriez-vous que la population s'est appauvri ou s'est enrichi ?
+
+# Prenoms des enfants (la semaine de 17 fevrier ou après les vacances)
+
+TODO

@@ -1,5 +1,5 @@
 ---
-title: "TP4 - la semaine de 3 fevrier"
+title: "TP4 - la semaine de 3 et 10 février"
 author: "Łukasz Mądry"
 date: "2025-01-22"
 output: html_document
@@ -72,6 +72,8 @@ head(iris)
 filter(iris, Sepal.Length - Sepal.Width > 1.5 & Petal.Length - Petal.Width > 1.5)
 ```
 
+`mean` veut dire `moyenne` en l'anglais, c'est-à-dire \[ \bar{x}^N = \inv{N} \sum_{i=1}^N x_i \]
+
 ```{r}
 iris %>% group_by(Species) %>% summarise_all(mean)
 ```
@@ -86,6 +88,7 @@ head(selected, 3)
 identical(selected, selected2)
 ```
 
+Avec `slice` on peut prendre sous-ensemble de lignes.
 ```{r}
 iris %>% slice(3:10)
 ```
@@ -93,6 +96,8 @@ iris %>% slice(3:10)
 ```{r}
 iris %>% select(contains("Sepal"))
 ```
+
+Fonction `mutate` a pour le but la création de nouveau colonne à partir de colonnes qui existent déjà.
 
 ```{r}
 newCol <- mutate(iris, greater.half = Sepal.Width > 0.5 * Sepal.Length)
@@ -112,21 +117,23 @@ arr.virg[30:35,]
 ```
 
 ```{r}
-summarise(arr.virg, mean.length = mean(Sepal.Length, na.rm = TRUE))
+summarise(arr.virg, mean.length = mean(Sepal.Length))
 ```
 
 
-### Exercices
+### Exercice
 
 -   adapter le code au-dessus pour ajouter une nouvelle etape - calculer une moyenne d'une colonne qui n'existe pas encore et on va le créer, donc combiner ca avec fonction `mutate`. A titre d'exemple on peut considerer colonne qui va contenir la valeur de 3/4 \* Sepal.Length + 1/4 \* Sepal.Width
-
--   ajouter les valeurs numériques aux facteurs dans colonne "Species", par ex. 1 au "virginica", 2 a "setosa" etc et calculer la moyenne de "Sepal.Width" avec le poids calculés à partir de ces facteurs numeriques. 
 
 ## NYC Flights
 
 Trouver toutes les vols dans `nycflights13` qui
 
 -   sont partis pendant l'été
+
+```{r}
+flights %>% filter(month >= 6 & month <= 9)
+```
 
 -   sont arrives deux heures en retard mais sont partis à l'heure
 
@@ -142,7 +149,6 @@ Trouver toutes les vols dans `nycflights13` qui
 
 # Dplyr avance
 
-Si vous n'avez eu du temps d'en finir, vous pouvez continuer ici avec les exercices de `dplyr` de TP3.
 
 On peut appeller `summarise` avec plusieurs colonnes et fonctions, avec `summarise_at(data, vars(...), funs(...))`
 
@@ -189,7 +195,7 @@ On peut aussi distinguer les cas distinctes dans notre tableau.
 distinct(flights, tailnum)
 ```
 
-Combien de pairs distincts origin-destination peut-on trouver ?
+Combien de paires distincts origin-destination peut-on trouver ?
 ```{r}
 distinct(flights, origin, dest)
 ```
@@ -215,9 +221,8 @@ Trouver les compagnies d'avion qui:
 
 1. desservent au moins 10 destinations distincts
 2. ne desservent pas toutes les aeroports d'origin
-3. desservent à la fois ATL et LAX ,
+3. desservent à la fois ATL et LAX,
 4. desservent à la fois ATL et LAX mais ne dessert pas aucune d'entre IAH et HNL
-
 
 Trouver toutes les destinations qui sont desservis chaque jour de juin à partir d'au moins un d'aeroport de New York.
 
@@ -353,7 +358,7 @@ airports |>
 
 * Est-ce que chaque vol a la données de meteo pour le moment du depart ?
 
-* Add the latitude and the longitude of the origin and destination airport to flights. Is it easier to rename the columns before or after the join?
+* Ajouter les coordonnes de l'aeroport d'origine et de destination, est-il plus facile de renommer les colonnes avant ou apres le join ?
 
 * Calculer le retard moyen par destination, ensuite faire joindre les donnes sur les aéroports et montre la distribution spatiale de retarts. Voila comment faire déssiner la carte de Etats-Unis: 
 
