@@ -356,7 +356,7 @@ airports |>
 
 * Trouver deux jours ou les retards on ete les plus importants. Faire le join avec le tableau de donnees `weather`. Est-ce que vous etez en mesure d'etablir un lien ?
 
-* Est-ce que chaque vol a la données de meteo pour le moment du depart ?
+* Est-ce que chaque vol a les données de meteo pour le moment du depart ?
 
 * Ajouter les coordonnes de l'aeroport d'origine et de destination, est-il plus facile de renommer les colonnes avant ou apres le join ?
 
