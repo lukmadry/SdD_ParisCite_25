@@ -63,6 +63,7 @@ if (x[0] > 0)
 
 -   Soit `x` une vecteur de valeurs numériques. Comment trouver une valeur minimal ? Comment trouver trouver la position d'une valeur minimal ? Écrire avec les boucles `for` ou `while` et conditionnement `if`
 
+
 ```{r}
 x <- sample(100, 20)
 N <- length(x)
@@ -86,22 +87,26 @@ while (i < N){
   i <- i +1
 }
 ```
+
+
 -   Avec une boucle `while` écrire un code qui va verifier si un vecteur est croissant.
 
+
 ```{r}
-x <- sample(100, 20)
+x <- seq(1, 10)
 croissant <- TRUE
 i <- 1
 
-while (x[i] < x[i+1]){
+while (x[i] < x[i+1] && i < length(x)){
   i <- i + 1
 }
-
+i
 if (i < length(x))
   croissant <- FALSE
 
-
+croissant
 ```
+
 
 # Fonctions
 
@@ -122,9 +127,59 @@ On vient de voir qu'une fonction peut être intérpreté differement selon l'arg
 ### Exercices
 
 -   Écrire une fonction qui va vérifier si une vecteur est decroissant
+
+```{r}
+is_decreasing <- function(x){
+  i <- 1
+  while (x[i] > x[i+1] && i < length(x) ){
+    i <- i + 1
+  }
+  print(i)
+  if (i == length(x)){
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
+is_decreasing(seq(10, 1, -1))
+```
+
 -   Avec les boucles écrire vos versions des fonctions `diff`, `seq`.
+
+```{r}
+my_diff <- function(x){
+  new_diff <- rep(0, length(x)-1)
+  for (i in 2:length(x)){
+    new_diff[i-1] <- x[i] - x[i-1]
+  }
+  return(new_diff)
+}
+
+my_seq <- function(start, end, jump){
+  jump_nr <- as.integer((end-start)/jump) + 1
+  new_seq <- rep(0, jump_nr)
+  for (i in 1:jump_nr){
+    new_seq[i] <- start + jump*(i-1)
+  }
+  return(new_seq)
+}
+
+x <- sample(10, 5)
+x
+my_diff(x)
+
+my_seq(1,12,3)
+```
 -   Écrire une fonction qui pour une vecteur `x` va calculer le coefficient de Gini, donné par:
 
 $$ G(x_1, ..., x_n) = \frac{\sum_{i=1}^n (n-2i+1)x_i}{(n-1) \sum_{i=1}^n x_i} $$
+
+```{r}
+gini <- function(x){
+  n <- length(x)
+  jumps <- seq(from=n, by=-2, along.with=x) -1
+  return( sum(jumps*x)/sum(x) )
+}
+```
 
 -   Écrire une fonction qui pour les nombres réels donnés `a,b` et un vecteur `x` va verifier si chaque element de `x` appartient a l'intervalle `[a,b]`. Écrire deux versions : l'une qui va renvoyer une seul valeur binaire - `TRUE` si toutes elements appartient a `[a,b]` et `FALSE` sinon. Deuxième version doit renvoyer un vecteur binaire `y` de meme longueur que `x` - si `x[i] \in [a,b]` alors `y[i] = TRUE`, et `y[i] = FALSE` sinon.

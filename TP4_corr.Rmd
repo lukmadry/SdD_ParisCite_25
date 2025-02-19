@@ -125,6 +125,10 @@ summarise(arr.virg, mean.length = mean(Sepal.Length))
 
 -   adapter le code au-dessus pour ajouter une nouvelle etape - calculer une moyenne d'une colonne qui n'existe pas encore et on va le créer, donc combiner ca avec fonction `mutate`. A titre d'exemple on peut considerer colonne qui va contenir la valeur de 3/4 \* Sepal.Length + 1/4 \* Sepal.Width
 
+```{r}
+arr.virg %>% mutate(newcol = 3/4 * Sepal.Length + 1/4 * Sepal.Width) %>% summarise(mn = mean(newcol))
+```
+
 ## NYC Flights
 
 Trouver toutes les vols dans `nycflights13` qui
@@ -137,14 +141,34 @@ flights %>% filter(month >= 6 & month <= 9)
 
 -   sont arrives deux heures en retard mais sont partis à l'heure
 
+```{r}
+flights %>% filter(arr_delay > 120 & dep_delay==0)
+```
+
 -   sont partis au moins une heure en retard mais qui ont rattrapé ce retard par au moins demi heure
+
+```{r}
+flights %>% select(c(dep_delay, arr_delay)) %>% filter(dep_delay > 60 & arr_delay - dep_delay < -30) 
+```
 
 -   sont partis entre minuit et 6h du matin
 
+```{r}
+flights %>% select(c(dep_time)) %>% filter(dep_time > 0 & dep_time < 600)
+```
+
 -   sont attires entre 6h et 8h du soir et sont partis de 'EWR', 'JFK' ou 'LGA'
+
+```{r}
+flights %>% select(c(origin, arr_time)) %>% filter(origin %in% c('EWR', 'JFK', 'LGA') & arr_time > 600 & arr_time < 800)
+```
+
 
 -   Trouver toutes les vols qui ont parcouru la distance supérieure que 600 miles et qui ont attent la vitesse supérieure que 475 miles par heure. Trier en ordre decroissant de vitesse
 
+```{r}
+flights %>% 
+```
 
 -   Ajouter une nouvelle colonne "speed" (ang. "vitesse") en km par heure. TODO : convert miles to kms
 
@@ -201,8 +225,8 @@ Combien de paires distincts origin-destination peut-on trouver ?
 distinct(flights, origin, dest)
 ```
 
-Question : on a un vecteur `x` qui contient certains valeurs dans l'autre vecteur `y`. Pour exemple on sait que `y = seq(20, 40)` et on sait que `x = sample(50)`. Comment, en utilisant une fonction `distinct` ou `unique` on peut vérifier si `x` contient toutes les valeurs de `y` ? Notons que `dplyr::distinct` ne fonctionne que pour les data.frame (tableaux de données), et c'est pourquoi dans le code ci-dessous on a transformé `x` en data.frame. 
-
+### Exercice :
+on a un vecteur `x` qui contient certains valeurs dans l'autre vecteur `y`. Pour exemple on sait que `y = seq(20, 40)` et on sait que `x = sample(50)`. Comment, en utilisant une fonction `distinct` ou `unique` on peut vérifier si `x` contient toutes les valeurs de `y` ? Notons que `dplyr::distinct` ne fonctionne que pour les data.frame (tableaux de données), et c'est pourquoi dans le code ci-dessous on a transformé `x` en data.frame. 
 
 ```{r}
 y <- seq(20, 40)
@@ -214,20 +238,49 @@ x <- sample(seq(20,40), size=35, replace=TRUE)
 x <- data.frame(x)
 
 # votre code ici - attention, si vous utilisez une fonction `length` (ang. longueur) elle va vous donner 1 pour les df, il faut utiliser `count`
+
+x %>% n_distinct(x)
 ```
 
+alors que pour que la reponse soit positive il faudrait avour 20.
+
+### Exercice
 Pour chaque compagnie d'avion, calculer la proportion de vols annulés. 
 
 Trouver les compagnies d'avion qui:
 
 1. desservent au moins 10 destinations distincts
+
+```{r}
+flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% summarise(dist_dest = n_distinct(dest)) %>% filter(dist_dest > 10)
+```
 2. ne desservent pas toutes les aeroports d'origin
+
+```{r}
+flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% summarise(dest_dist = n_distinct(dest), orig_dist = n_distinct(origin)) %>% filter(dest_dist < 3)
+```
 3. desservent à la fois ATL et LAX,
-4. desservent à la fois ATL et LAX mais ne dessert pas aucune d'entre IAH et HNL
+
+```{r}
+flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% filter(dest %in% c('ATL', 'LAX')) %>% distinct(carrier)
+```
+4. desservent à la fois ATL et LAX mais ne dessert pas aucune d'entre IAH et HNL 
+
+```{r}
+# tres similaire a un exo precendante
+```
 
 Trouver toutes les destinations qui sont desservis chaque jour de juin à partir d'au moins un d'aeroport de New York.
 
+```{r}
+flights %>% select(c(dest, month, day, origin)) %>% filter(month == 6 & origin %in% c('JFK', 'EWR', 'LGA')) %>% group_by(dest) %>% summarise(dist_days = n_distinct(day)) %>% filter(dist_days == 30)
+```
+
 Quel compagnie d'avion controle l'avion ( tailnum ) qui dessert le nombre le plus grand de destinations distinct ?
+
+```{r}
+flights %>% select(c(dest, tailnum, carrier)) %>% group_by(tailnum, carrier) %>% summarise(number_dest = n_distinct(dest)) %>% arrange(desc(number_dest))
+```
 
 # Ungroup
 
@@ -294,7 +347,15 @@ flights %>%
 
 * Trouver les vols qui ont eu le plus de retard
 
+```{r}
+flights %>% arrange(arr_delay)
+```
+
 * Grouper les destination et trouver les destination les plus populaires
+
+```{r}
+flights %>% group_by(dest) %>% summarise(nr = n()) %>% arrange(desc(nr))
+```
 
 * Calculer le retard relative (arr_delay / sum(arr_delay)) pour chaque groupe
 
