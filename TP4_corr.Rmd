@@ -262,7 +262,7 @@ flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% summarise
 3. desservent à la fois ATL et LAX,
 
 ```{r}
-flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% filter(dest %in% c('LAX', 'ATL')) %>% mutate(nr_dest = n_distinct(dest)) %>% filter(nr_dest == 2) %>% select(c('carrier'))
+flights %>% select(c(carrier, dest, origin)) %>% group_by(carrier) %>% filter(dest %in% c('LAX', 'ATL')) %>% summarise(nr_dest = n_distinct(dest)) %>% filter(nr_dest == 2)
 ```
 4. desservent à la fois ATL et LAX mais ne dessert pas aucune d'entre IAH et HNL 
 
