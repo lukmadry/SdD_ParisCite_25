@@ -80,7 +80,9 @@ Recréer la graphe de freauence de `scheduled_dep_time` colore en fonction d'ann
 Ici on va comparer le moyenne et mediane sur quelques examples. On va charger un tableau de donnees de salaires francaises, telecharge de site web d'INSEE, ici https://www.insee.fr/fr/statistiques/7656152?sommaire=7656168#consulter 
 
 ```{r}
-df <- read.csv("t201.csv", sep=";", header = TRUE)
+#df <- read.csv("t201.csv", sep=";", header = TRUE)
+download.file("https://www.insee.fr/fr/statistiques/fichier/7656152/T201.csv", 't201_down.csv')
+df <- read.csv('t201_down.csv', sep=';', header = TRUE)
 head(df)
 ```
 
