@@ -1,0 +1,258 @@
+---
+title: "TP6 - la semaine de 17 mars"
+author: "Łukasz Mądry"
+date: "2025-01-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+
+# Analyse bivariee
+
+### Dependance lineaire et non-lineaire
+
+En cours vous avez vu comment calculer la covariance de deux vecteurs aleatoires. Ici on va voir quelques exemples des pairs $(X,Y)$ qui ont la covariance zero mais qui ne sont pas independantes.
+
+```{r}
+N <- 1000 # si vous n'arrivez pas a lancer ce calcul assez vite, vous pouvez diminuer ce valeur.
+x <- runif(N, -1, 1)
+y <- x^2
+
+cov(x,y) 
+# on va voir ici le valeur tres proche de zero. Evidemment, y depends de x.
+```
+
+
+Maintenant on va etudier les exemple de 'bonne' covariance
+```{r}
+a <- 3
+z <- a * x
+
+cov(x,z)
+
+u <- a * x + 0.05 * rnorm(N)
+
+cov(x, u)
+```
+
+On peut verifier que c'est une valeur correct en regardant le calcul suivant:
+
+\[ Cov(X,Y) = E[XY] - E[X] E[Y] = E[3 X^2] = 3 E[X^2] \]
+
+Comme $X \sim \mathcal{U}(a,b)$ avec $a=-1,b=1$ on a \[ E[X^2] = \frac{a^2 + ab + b^2}{3} = \frac{2 -1}{3} = \frac{1}{3} \]
+
+C'est donc assez proche d'une valeur attendue et l'addition de $0.05 * Z, Z \sim \mathcal{N}(0,1)$ ne change pas grande chose.
+
+#### Exercices
+
+* Echanger $0.05$ dans l'exemple qu'on vient d'étudier avec les valeurs les plus grands. Notons ce paramètre $\sigma$. Etudier l'influence sur la covariance et faire une graphe de covariance en fonction de $\sigma$. Vous pouvez prendre par exemple $\sigma \in \{0.05, 0.25, 0.5, 1, 2, 10, 100}$
+
+### Analyse bivariee des valeurs numeriques et des facteurs
+
+Bien sur, si $X$ est un vecteur de valeurs numériques et $Y$ est un vecteur de valeurs textuels, calcul de covariance n'a aucun sens. On va étudier une exemple. Prenons un tableau de données `iris`. 
+
+```{r}
+levels(iris$Species)
+```
+
+Exercice : calculer la covariance entre `iris$Sepal.Length` et `iris$Species` en prenant autres valeurs pour chaque valeurs dans la deuxième colonne, par exemple tester:
+
+```{r}
+i <- 0
+liste <- list()
+for (d in levels(iris$Species)){
+  liste[d] <- i
+  i <- i+1
+}
+```
+
+ou
+```{r}
+c <- 6
+liste2 <- list()
+for (d in levels(iris$Species)){
+  liste[d] <- c
+  c <- c - 2
+}
+```
+
+Changer `iris$Species` aux valeurs correspondantes dans `liste` et `liste2` et calculer la covariance. Qu'en observez-vous ? Est-ce que toutes les deux resultats sont raisonnables ? Ou peut-etre aucun ne l'est ?
+
+## Regression lineaire
+
+On va étudier la régression lineaire. D'abord on va essayer de faire la même chose qu'on a fait avec la covariance.
+
+```{r}
+simple_fit <- lm(y ~ x)
+simple_fit
+```
+```{r}
+summary(simple_fit)
+```
+
+Ce qui n'est pas du tout etonnant ! On a vu en cours que pour les variables $Y,X$ les coefficients $a,b$ dans la regression lineaire $Y = a X + b$ s'expriment avec:
+
+\[ a = \frac{\text{Cov}(X,Y)}{\text{Var}(X)} \quad b = \bar{Y}^n - \rho_{XY} \frac{\sigma_Y}{\sigma_X} \bar{X}^n  \]
+
+### Exercice
+
+* Avec `cov, var, mean` vérifier que les valeurs qu'on vient d'obtenir avec `lm` sont correctes.
+* Ecrire votre propre fonction `regression` qui va prendre deux vecteurs numeriques `x,y` et renvoyer `a,b` comme donne par les expression au-dessus. 
+
+## Regression - suite
+
+Maintenant on va etudier l'exemple vraiment linéaire. 
+
+```{r}
+a <- 3
+b <- 1
+
+m <- a*x + b + 0.1 * rnorm(N)
+
+lm(m ~ x)
+```
+** Est-ce qu'on peut prévoir la difference en `x` en fonction de taille d'un bruit ? Similaire au calcul de covariance, etudier l'influence de $\sigma$, c'est-a-dire- une parametre qui va remplacer `0.1` dans le code au-dessus, sur les coefficients `a,b`.
+** Est-ce que le changement de forme d'un bruit va changer quelque chose ? Au lieu de `rnorm` utiliser une autre fonction qui va génerer un bruit et calculer les coefficients.
+
+Qu'est-ce qu'on va obtenir si on va prendre les donnees non-lineaires ?
+```{r}
+nl <- b + a * x^2
+lm(nl ~ x)
+```
+Et si on va prendre
+```{r}
+sq <- x^2
+lm(nl ~ sq)
+```
+voilà, on retrouve exactement nos coefficients. Parfois donc il faudra chercher une non-linearite correcte qui va transformer notre modele non-lineaire en modele lineaire. 
+
+## p-valeur
+
+Avant qu'on va regarder la regression lineaire sur les donnees vraies, on va d'abord s'interesser a la notion de p-valeur. On va l'etudier sur le cas beaucoup plus simple.
+
+On va calculer le probabilite d'obtention de taux de naissance sous l'hypothese null $p_0 = 0.512$.
+
+
+```{r}
+require(here)
+path_data <- dirname(rstudioapi::getSourceEditorContext()$path)
+births_fr_path <- here(path_data, 't35.fr.xls')
+births_fr_url <- 'https://www.ined.fr/fichier/s_rubrique/168/t35.fr.xls'
+
+if (!file.exists(births_fr_path)) {
+  download.file(births_fr_url, births_fr_path, mode = "wb")
+}
+
+births_fr <-  readxl::read_excel(births_fr_path, skip = 3)
+
+births_fr <- births_fr[2:122, ] 
+
+
+births_fr <- births_fr %>%
+  rename(year= `Répartition par sexe et vie`,
+         n_livebirths = `Ensemble des nés vivants`,
+         n_live_boys = `Nés vivants - Garçons`,
+         n_stillbirths = `Ensemble des enfants sans vie`,
+         n_still_boys =`Enfants sans vie - Garçons`) %>%
+  select(year, starts_with('n_')) 
+
+#births_fr <- births_fr[1:122,]
+
+births_fr |> 
+  glimpse()
+
+```
+
+* calculer le probabilité d'obtention de taux de naissance sous l'hypothese $p_0 = 0.512$
+* trouver toutes les annees où cet probabilite a été inférieure à 5%
+
+## Regression sur les donnees vraies.
+
+On va etudier le tableau de donnees whiteside. Ca sera aussi l'occasion pour regarder plus près p-valeur.
+
+```{r}
+whiteside <- MASS::whiteside
+lm0 <- whiteside %>% 
+  lm(Gas ~ Temp, .)
+
+summary(lm0)
+```
+
+On voit que p-valeur est très bas. Qu'est ce que ça veut dire?
+
+### Exercice
+* Contruire deux régressions avec `Insul='Before'` et `Insul='After'`. 
+* Faire paraître une graphe de régression
+
+## Regression lineaire - la diagnostique
+
+```{r}
+summary(lm(nl ~ sq))
+```
+On voit quand même que si l'estimation est trop bonne, R va nous prevenir qu'il y a potentiellement un probleme.
+
+Maintenant on va regarder comment mesurer la qualite de regression. 
+
+## Mesures de qualite de regression
+
+* En adaptant le code de diapos sur Moodle, créer les graphes de quatre mesures de qualité de régression qu'on a vu en cours.
+
+## Quartet d'Anscombe
+
+Quartet d'Anscombe est une ensemble de donnees qui ont le qualité de regression a peu pres identique. Pourtant il y a plein de difference entre eux.
+
+```{r}
+anscombe <- datasets::anscombe
+
+head(anscombe)
+```
+
+```{r}
+reg1 <- lm(anscombe$y1 ~ anscombe$x1)
+reg2 <- lm(anscombe$y2 ~ anscombe$x2)
+reg3 <- lm(anscombe$y3 ~ anscombe$x3)
+reg4 <- lm(anscombe$y4 ~ anscombe$x4)
+```
+
+## Exercices 
+
+
+** Regarder `summary(reg1), summary(reg2)` etc. Qu'observez-vous ? 
+** Calculer l'erreur quadratique chaque regression \[ \sum_{j=1}^n (y_j - \hat{y}_j)^2  \]
+
+A partir de la, on en pourra tirer conclusion que toutes les quatres regression sont identiques. 
+
+** Calculer l'erreur absolue
+
+\[ \sum_{j=1}^n | y_j - \hat{y}_j | \]
+
+Pourtant:
+
+```{r}
+datasets::anscombe %>%
+  pivot_longer(everything(),  #<<
+    names_to = c(".value", "group"), #<<
+    names_pattern = "(.)(.)" #<<
+  )  %>%
+  rename(X=x, Y=y) %>%
+  arrange(group)-> anscombe_long
+
+
+p <- anscombe_long %>%
+  ggplot(aes(x=X, y=Y)) +
+  geom_smooth(method="lm", se=FALSE) +  #<<
+  facet_wrap(~ group) +                 #<<
+  ggtitle("Anscombe quartet: linear regression Y ~ X")
+
+(p + geom_point())
+```
+
+On voit bien qu'il y a une regression qui est mieux que les autres. Les colonnes 2 et 4 n'ont pas de dependence lineaire entre `x` et `y`. Est-ce que qualite de regression correspond aux erreurs absolutes que vous avez calcules tout de suite ?

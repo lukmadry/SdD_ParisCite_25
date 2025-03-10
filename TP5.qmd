@@ -80,9 +80,7 @@ Recréer la graphe de freauence de `scheduled_dep_time` colore en fonction d'ann
 Ici on va comparer le moyenne et mediane sur quelques examples. On va charger un tableau de donnees de salaires francaises, telecharge de site web d'INSEE, ici https://www.insee.fr/fr/statistiques/7656152?sommaire=7656168#consulter 
 
 ```{r}
-#df <- read.csv("t201.csv", sep=";", header = TRUE)
-download.file("https://www.insee.fr/fr/statistiques/fichier/7656152/T201.csv", 't201_down.csv')
-df <- read.csv('t201_down.csv', sep=';', header = TRUE)
+df <- read.csv("t201.csv", sep=";", header = TRUE)
 head(df)
 ```
 
@@ -162,6 +160,435 @@ Questions:
 ** Combien de jouers finissent avec le capital plus grand que 10 ? Est-ce que consistent avec les prediction theoriques ? Calculer le moyenne, le mediane et les quantiles $1/10, 1/4, 3/4, 9/10$.
 ** Tracer une histogram du capital possede par la population. En moyenne, est-ce qu'on a plus ou moins du capital ? Diriez-vous que la population s'est appauvri ou s'est enrichi ?
 
-# Prenoms des enfants (la semaine de 17 fevrier ou après les vacances)
+# Prenoms des enfants (la semaine de 17 fevrier ou apres les vacances)
 
-TODO
+## Donnees francaises
+
+Les donnes francais sont disponible sur la page web d'INSEE ici [INSEE](https://www.insee.fr/fr/accueil)  (French Governement Statistics Institute)
+
+- [https://www.insee.fr/fr/statistiques/fichier/2540004/nat2021_csv.zip](https://www.insee.fr/fr/statistiques/fichier/2540004/nat2021_csv.zip)
+
+Ces donnes ont ete consideres par des chercheurs en sciences sociales depuis des decennies. Les prenoms donnes peuvent faciliter l'analyse de beaucoup de phenomena sociaux, par exemple la suivi de religion.
+
+Vous pouvez consulter par exemple [_L'archipel français_ by Jérome Fourquet, Le Seuil, 2019 ](https://www.seuil.com/ouvrage/l-archipel-francais-jerome-fourquet/9782021406023)
+
+Lire [File documentation](https://www.insee.fr/fr/statistiques/2540004?sommaire=4767262#documentation)
+
+```{r}
+path_data <- 'DATA'
+fname <- 'nat2021_csv.zip'
+fpath <- here(path_data, fname)
+
+if (!file.exists(fpath)){
+  url <- "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2021_csv.zip"
+  download.file(url, fpath, mode="wb")
+}   
+
+df_fr <- readr::read_csv2(fpath)
+
+# df_fr |> glimpse()
+```
+
+## US data 
+
+Les donnes des Etats-Unis peuvent etre trouves
+
+[Baby Names USA from 1910 to 2021 (SSA)](https://www.kaggle.com/datasets/donkea/ssa-names-1910-2021?resource=download)
+
+Voir [https://www.ssa.gov/oact/babynames/background.html](https://www.ssa.gov/oact/babynames/background.html)
+
+
+On peut aussi installer directement le package "babynames".
+
+
+Full baby name data provided by the SSA. This includes all names with at least 5 uses.
+
+
+```{r}
+if (!require("babynames")){
+  install.packages("babynames")
+  stopifnot(require("babynames"), "Couldn't install and load package 'babynames'")
+}
+```
+
+```{r}
+?babynames
+```
+
+##  Tidy the French data 
+
+On va changer les noms de colonnes.
+
+```{r}
+lkp <- list(year="annais",
+  sex="sexe",
+  name="preusuel",
+  n="nombre")
+```
+
+```{r}
+df_fr <- df_fr |>
+  rename(!!!lkp) |>   # <1>
+  mutate(country='fr') |>
+  mutate(sex=as_factor(sex)) |>
+  mutate(sex=fct_recode(sex, "M"="1", "F"="2")) |>
+  mutate(sex=fct_relevel(sex, "F", "M")) |> 
+  mutate(year=ifelse(year=="XXXX", NA, year)) |>
+  mutate(year=as.integer(year)) 
+  
+df_fr  |>
+  sample(5) |>
+  glimpse()
+```
+
+1. `!!!` (bang-bang-bang) est rendu disponible par le package `rlang`. Ici, on l'utilise afin de faire *list unpacking* (si vous connaissez le dictionaire en Python, le but est similaire ici)
+
+Telecharger 'Naissances totales par sexe' depuis URL `https://www.ined.fr/fichier/s_rubrique/168/t35.fr.xls` from [INED](https://www.ined.fr/).
+
+```{r}
+births_fr_path <- here(path_data, 't35.fr.xls')
+births_fr_url <- 'https://www.ined.fr/fichier/s_rubrique/168/t35.fr.xls'
+
+if (!file.exists(births_fr_path)) {
+  download.file(births_fr_url, births_fr_path)
+}
+```
+
+```{r}
+births_fr <-  readxl::read_excel(births_fr_path, skip = 3)
+
+births_fr <- births_fr[-1, ] 
+
+
+births_fr |> 
+  glimpse()
+```
+
+::: {.callout-tip}
+
+Si vous avez des problemes avec le fichier excel, vous pouvez utiliser le fichier `csv` equivalent disponible ici [url](https://stephane-v-boucheron.fr/data/t35.fr.csv)
+
+:::
+
+```{r}
+names(births_fr)[1] <- "year"
+```
+
+```{r}
+births_fr <- births_fr |>
+  mutate(year=as.integer(year)) |>
+  drop_na()
+```  
+
+```{r}
+births_fr |>
+  ggplot() +
+  aes(x=year, y=`Ensemble des nés vivants`) +
+  geom_col() +
+  labs(title="Births in France")
+```
+
+##  Tidy the American data
+
+
+```{r}
+babynames <- babynames |>
+  mutate(country='us') |>
+  mutate(sex=as_factor(sex))
+  
+babynames |>
+  glimpse()
+```
+
+
+
+```{r}
+births_us <- births
+
+births_us  |> 
+  ggplot() +
+  aes(x=year, y=births) +
+  geom_col() +
+  labs(title="Births in USA")
+```
+
+
+```{r}
+
+```
+
+
+## Sex ratios 
+
+::: {.callout-note}
+
+### Question
+
+Dans le tableau de donnees `df_fr` calculer le nombre totale de naissances par an. Calculer et creer un graphe de taux `hommes/femmes`.
+
+:::
+
+
+::: {.content-visible   when-profile="solution"}
+
+```{r}
+df_accounted_births_fr <- df_fr |>
+  group_by(year, sex) |>
+  summarise(n=sum(n)) 
+  
+df_accounted_births_fr |>
+  glimpse()
+```
+
+```{r}
+df_app_sex_ratio_fr <- df_accounted_births_fr |>
+  pivot_wider(id_cols=year, 
+              names_from=sex, 
+              values_from=`n`) |>
+  mutate(`Garçons vivants pour 100\nfilles vivantes`=100*M/F)
+              
+df_app_sex_ratio_fr |>
+  glimpse()
+```
+
+```{r}
+p_app_sex_ratio_fr <- df_app_sex_ratio_fr |>
+  ggplot() +
+  aes(x=year, y=`Garçons vivants pour 100\nfilles vivantes`) +
+  geom_col() +
+  theme_minimal() # <1>
+  
+  
+p_app_sex_ratio_fr  +
+  labs(
+    title="France: Apparent sex ratio",
+    subtitle="Dataset: 'nat2021_csv' (INSEE)"
+  ) 
+```
+1. Should not be necessary
+
+:::
+
+::: {.callout-note}
+
+### Question
+
+Le comparer avec le taux donnes par le tableau venant d'INED.
+
+:::
+
+::: {.content-visible   when-profile="solution"}
+
+```{r}
+p_sex_ratio_fr <- p_app_sex_ratio_fr %+% 
+  births_fr 
+
+p_sex_ratio_fr + labs(
+    title="France: sex ratio",
+    subtitle="Dataset INED") 
+```
+
+```{r}
+(p_app_sex_ratio_fr + p_sex_ratio_fr) +
+  plot_annotation(
+    title="Evolution of sex ratio  at birth in France",
+    subtitle="Left: INSEE data. Right: INED data"
+  )
+```
+
+```{r}
+df_app_sex_ratio_fr |>
+  inner_join(births_fr, by="year") |>
+  glimpse()
+```
+```{r}
+df_app_sex_ratio_fr |>
+  inner_join(births_fr, by="year") |>
+  ggplot() +
+  aes(x=year, y=`Garçons vivants pour 100\nfilles vivantes.x`/`Garçons vivants pour 100\nfilles vivantes.y`) +
+  geom_point(size=.5) +
+  scale_y_log10() +
+  ylab('Ratio between apparent sex ratio and\n exact sex ratio') +
+  labs(
+    title="French data, confronting INSEE and INED data"
+  )
+```
+
+:::
+
+
+::: {.callout-note}
+
+
+# Picturing concentration of babynames distributions
+
+Chaque annee dans chaque payes, pour deux sexes, le comptage des noms definissent la distribution de proba discret. Cet distribution est normalement loin d'etre uniform et on veut quantifier le degre de ce distance d'uniformite.
+
+On va utiliser les outils developpe pour l'econometrie. Sans perte en generalite, on suppose qu'on a la distribution sur l'ensemble fini $1, \ldots, n$ ou $n$ et le nombre des prenoms distincs donnees cette annee. 
+
+On suppose que les frequences $p_1, p_2, \ldots, p_n$ sont donnees dans l'ordre croissant.
+
+La fonction `Lorenz` ([Lorenz](https://en.wikipedia.org/wiki/Lorenz_curve) pas `Lorentz`) est l'application $[0, 1] \to [0, 1]$.
+
+$$L(x) = \sum_{i=1}^{\lfloor nx \rfloor} p_i .$$
+Notons qu'il s'agit d'une application constant sur morceaux.
+
+::: {.callout-note}
+
+### Question 
+
+Calculer et faire une graphe de fonction Lorenz pour `sex`, `year` et `country`
+
+:::
+
+::: {.content-visible when-profile="solution"}
+
+```{r}
+make_lorenz_df <- function(df) {  
+  df |>
+  group_by(year, sex) |>
+  arrange(n) |>
+  mutate(rr=row_number()/n(), L=cumsum(n)/sum(n),  p=n/sum(n)) |>  # <1>
+  ungroup()
+}
+```
+1. The three expressions defining `rr`, `L` and `p` act as window functions. The window is defined by partitioning by `year, sex` and ordering by `n`. In SQL parlance: `WINDOW w AS (PARTITION BY year, sex ORDER BY n)`
+
+```{r}
+df_lorenz_fr <- df_fr |> 
+  filter(name != '_PRENOMS_RARES' &  !is.na(year)) |>
+  make_lorenz_df()
+
+df_lorenz_us <- babynames |> 
+  make_lorenz_df()
+```
+
+
+```{r}
+plot_lorenz <- function(df, ze_year=2020, ze_country='fr'){
+  df |>
+  filter(year==ze_year) |>
+  ggplot() +
+    aes(x=rr, y=L, linetype=sex) +
+    geom_line()  +
+    coord_fixed() +
+    xlab("") +
+    ylab("") +
+    geom_abline(intercept=0, slope=1, linetype="dotted") +
+    labs(title="Lorenz curve for babynames distribution",
+         subtitle=glue("Year: {ze_year}"),
+         caption=glue("Country: {ze_country}")
+    )
+} 
+```
+
+```{r}
+plot_lorenz(df_lorenz_fr, 2010, 'France') |
+plot_lorenz(df_lorenz_us, 2010, 'USA') 
+```
+
+```{r}
+plot_lorenz(df_lorenz_fr, 1910, 'France') |
+plot_lorenz(df_lorenz_us, 1910, 'USA')  
+```
+
+:::
+
+
+::: {.callout-note}
+
+
+# Inequality indices 
+
+La courbe de Lorenz decrit la distance entre la distribution uniform et celle qu'on etudie. Il s'agit d'un sujet tres richet et difficile a transmettre effectivement. Il est plus facile de concevoir la notion d'inegalite en s'appuyant sur un nombre (meme si souvent des gens ne le comprennent pas)
+
+L'indice de [Gini](https://en.wikipedia.org/wiki/Gini_coefficient) est egale a deux fois d'aire entre $y=x$ et $y=L(x)$.
+
+$$G = 2 \times \int_0^1 (x -L(x)) \mathrm{d}x$$
+
+La formulae suivante nous permets de le calculer facilement.
+
+$$G={\frac {2\sum _{i=1}^{n}i p_{i}}{n\sum _{i=1}^{n}p_{i}}}-{\frac {n+1}{n}}.$$
+
+
+::: {.callout-note}
+
+### Exercices
+
+* Calculer l'indice de Gini pour `sex` et `year`.
+
+:::
+
+::: {.content-visible when-profile="solution"}
+
+```{r}
+p_gini <- df_lorenz_fr |>
+  group_by(year, sex) |>
+  summarize(gini=2 * sum(rr*p) - 1 - 1/n()) |>
+  ggplot() +
+  aes(x=year, y=gini, linetype=sex) +
+  geom_line() +
+  theme(legend.position="none") +
+  ylab("Gini index") 
+
+for(y in c(1914, 1918, 1938, 1945, 1958, 1969)) {
+  p_gini <- p_gini + 
+    geom_vline(xintercept = y, linetype="dotted") 
+}  
+
+p_gini_fr <- p_gini +
+  labs(subtitle="Country: France")
+```
+
+
+```{r}
+p_gini_us <- (
+  p_gini %+% 
+    (df_lorenz_us |>
+     group_by(year, sex) |>
+     summarize(gini=2 * sum(rr*p) - 1 - 1/n(), .groups="drop")) +  
+     labs(
+      subtitle="Country: US"
+  )
+)
+```
+
+```{r}
+(p_gini_fr| p_gini_us) +
+  plot_annotation(
+    title="Gini index of names distributions",
+    subtitle="..."
+)
+  
+```
+
+
+```{r}
+ 
+
+giniplot <- function (df) {
+  df |>
+  filter(name != '_PRENOMS_RARES' &  !is.na(year)) |>
+  group_by(year, sex) |>
+  mutate(gini=ineq::ineq(n)) |>
+  ggplot() +
+  aes(x=year, y=gini, linetype=sex) +
+  geom_line() +
+  theme(legend.position = "none")
+}
+
+p1 <- giniplot(filter(df_fr, year> 1947))
+p2 <- giniplot(filter(babynames, year>1947))
+
+
+( p1 | p2 ) +
+  plot_annotation(
+    title = "Evolution of Gini coeffcients of babynames distribution",
+    subtitle="France (left), USA (right) \n plain: girls  dotted: boys"
+  )
+```
+
+
+:::
+
+* Revenir au tableau de donnees qu'on a considere au debut. Faire la meme chose pour les salaries.
