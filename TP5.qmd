@@ -80,7 +80,7 @@ Recréer la graphe de freauence de `scheduled_dep_time` colore en fonction d'ann
 Ici on va comparer le moyenne et mediane sur quelques examples. On va charger un tableau de donnees de salaires francaises, telecharge de site web d'INSEE, ici https://www.insee.fr/fr/statistiques/7656152?sommaire=7656168#consulter 
 
 ```{r}
-df <- read.csv("t201.csv", sep=";", header = TRUE)
+df <- read.csv("t201_down.csv", sep=";", header = TRUE)
 head(df)
 ```
 
@@ -151,7 +151,7 @@ On voit que la variable normale a une moyenne a eu pres egale, mais ce n'est pas
 
 \[ \mathbb{P}(C^i_k = 2 C^i_{k-1}) = 1/2 \quad \mathbb{P}(C^i_k = 0) = 1/2  \]
 
-Autrement dit, avec probabilite $1/2$ on peut doubler notre capital ou tout perdre. Si on perds notre capital, on ne peut plus jouer parce que notre capital est egale a zero.
+Autrement dit, avec probabilite $1/2$ on peut doubler notre capital ou tout perdre. Si on perd notre capital, on ne peut plus jouer parce que notre capital est egale a zero.
 
 Questions:
 
@@ -329,44 +329,6 @@ Dans le tableau de donnees `df_fr` calculer le nombre totale de naissances par a
 :::
 
 
-::: {.content-visible   when-profile="solution"}
-
-```{r}
-df_accounted_births_fr <- df_fr |>
-  group_by(year, sex) |>
-  summarise(n=sum(n)) 
-  
-df_accounted_births_fr |>
-  glimpse()
-```
-
-```{r}
-df_app_sex_ratio_fr <- df_accounted_births_fr |>
-  pivot_wider(id_cols=year, 
-              names_from=sex, 
-              values_from=`n`) |>
-  mutate(`Garçons vivants pour 100\nfilles vivantes`=100*M/F)
-              
-df_app_sex_ratio_fr |>
-  glimpse()
-```
-
-```{r}
-p_app_sex_ratio_fr <- df_app_sex_ratio_fr |>
-  ggplot() +
-  aes(x=year, y=`Garçons vivants pour 100\nfilles vivantes`) +
-  geom_col() +
-  theme_minimal() # <1>
-  
-  
-p_app_sex_ratio_fr  +
-  labs(
-    title="France: Apparent sex ratio",
-    subtitle="Dataset: 'nat2021_csv' (INSEE)"
-  ) 
-```
-1. Should not be necessary
-
 :::
 
 ::: {.callout-note}
@@ -376,49 +338,6 @@ p_app_sex_ratio_fr  +
 Le comparer avec le taux donnes par le tableau venant d'INED.
 
 :::
-
-::: {.content-visible   when-profile="solution"}
-
-```{r}
-p_sex_ratio_fr <- p_app_sex_ratio_fr %+% 
-  births_fr 
-
-p_sex_ratio_fr + labs(
-    title="France: sex ratio",
-    subtitle="Dataset INED") 
-```
-
-```{r}
-(p_app_sex_ratio_fr + p_sex_ratio_fr) +
-  plot_annotation(
-    title="Evolution of sex ratio  at birth in France",
-    subtitle="Left: INSEE data. Right: INED data"
-  )
-```
-
-```{r}
-df_app_sex_ratio_fr |>
-  inner_join(births_fr, by="year") |>
-  glimpse()
-```
-```{r}
-df_app_sex_ratio_fr |>
-  inner_join(births_fr, by="year") |>
-  ggplot() +
-  aes(x=year, y=`Garçons vivants pour 100\nfilles vivantes.x`/`Garçons vivants pour 100\nfilles vivantes.y`) +
-  geom_point(size=.5) +
-  scale_y_log10() +
-  ylab('Ratio between apparent sex ratio and\n exact sex ratio') +
-  labs(
-    title="French data, confronting INSEE and INED data"
-  )
-```
-
-:::
-
-
-::: {.callout-note}
-
 
 # Picturing concentration of babynames distributions
 
@@ -441,63 +360,6 @@ Calculer et faire une graphe de fonction Lorenz pour `sex`, `year` et `country`
 
 :::
 
-::: {.content-visible when-profile="solution"}
-
-```{r}
-make_lorenz_df <- function(df) {  
-  df |>
-  group_by(year, sex) |>
-  arrange(n) |>
-  mutate(rr=row_number()/n(), L=cumsum(n)/sum(n),  p=n/sum(n)) |>  # <1>
-  ungroup()
-}
-```
-1. The three expressions defining `rr`, `L` and `p` act as window functions. The window is defined by partitioning by `year, sex` and ordering by `n`. In SQL parlance: `WINDOW w AS (PARTITION BY year, sex ORDER BY n)`
-
-```{r}
-df_lorenz_fr <- df_fr |> 
-  filter(name != '_PRENOMS_RARES' &  !is.na(year)) |>
-  make_lorenz_df()
-
-df_lorenz_us <- babynames |> 
-  make_lorenz_df()
-```
-
-
-```{r}
-plot_lorenz <- function(df, ze_year=2020, ze_country='fr'){
-  df |>
-  filter(year==ze_year) |>
-  ggplot() +
-    aes(x=rr, y=L, linetype=sex) +
-    geom_line()  +
-    coord_fixed() +
-    xlab("") +
-    ylab("") +
-    geom_abline(intercept=0, slope=1, linetype="dotted") +
-    labs(title="Lorenz curve for babynames distribution",
-         subtitle=glue("Year: {ze_year}"),
-         caption=glue("Country: {ze_country}")
-    )
-} 
-```
-
-```{r}
-plot_lorenz(df_lorenz_fr, 2010, 'France') |
-plot_lorenz(df_lorenz_us, 2010, 'USA') 
-```
-
-```{r}
-plot_lorenz(df_lorenz_fr, 1910, 'France') |
-plot_lorenz(df_lorenz_us, 1910, 'USA')  
-```
-
-:::
-
-
-::: {.callout-note}
-
-
 # Inequality indices 
 
 La courbe de Lorenz decrit la distance entre la distribution uniform et celle qu'on etudie. Il s'agit d'un sujet tres richet et difficile a transmettre effectivement. Il est plus facile de concevoir la notion d'inegalite en s'appuyant sur un nombre (meme si souvent des gens ne le comprennent pas)
@@ -511,84 +373,9 @@ La formulae suivante nous permets de le calculer facilement.
 $$G={\frac {2\sum _{i=1}^{n}i p_{i}}{n\sum _{i=1}^{n}p_{i}}}-{\frac {n+1}{n}}.$$
 
 
-::: {.callout-note}
-
 ### Exercices
 
 * Calculer l'indice de Gini pour `sex` et `year`.
 
-:::
-
-::: {.content-visible when-profile="solution"}
-
-```{r}
-p_gini <- df_lorenz_fr |>
-  group_by(year, sex) |>
-  summarize(gini=2 * sum(rr*p) - 1 - 1/n()) |>
-  ggplot() +
-  aes(x=year, y=gini, linetype=sex) +
-  geom_line() +
-  theme(legend.position="none") +
-  ylab("Gini index") 
-
-for(y in c(1914, 1918, 1938, 1945, 1958, 1969)) {
-  p_gini <- p_gini + 
-    geom_vline(xintercept = y, linetype="dotted") 
-}  
-
-p_gini_fr <- p_gini +
-  labs(subtitle="Country: France")
-```
-
-
-```{r}
-p_gini_us <- (
-  p_gini %+% 
-    (df_lorenz_us |>
-     group_by(year, sex) |>
-     summarize(gini=2 * sum(rr*p) - 1 - 1/n(), .groups="drop")) +  
-     labs(
-      subtitle="Country: US"
-  )
-)
-```
-
-```{r}
-(p_gini_fr| p_gini_us) +
-  plot_annotation(
-    title="Gini index of names distributions",
-    subtitle="..."
-)
-  
-```
-
-
-```{r}
- 
-
-giniplot <- function (df) {
-  df |>
-  filter(name != '_PRENOMS_RARES' &  !is.na(year)) |>
-  group_by(year, sex) |>
-  mutate(gini=ineq::ineq(n)) |>
-  ggplot() +
-  aes(x=year, y=gini, linetype=sex) +
-  geom_line() +
-  theme(legend.position = "none")
-}
-
-p1 <- giniplot(filter(df_fr, year> 1947))
-p2 <- giniplot(filter(babynames, year>1947))
-
-
-( p1 | p2 ) +
-  plot_annotation(
-    title = "Evolution of Gini coeffcients of babynames distribution",
-    subtitle="France (left), USA (right) \n plain: girls  dotted: boys"
-  )
-```
-
-
-:::
 
 * Revenir au tableau de donnees qu'on a considere au debut. Faire la meme chose pour les salaries.
