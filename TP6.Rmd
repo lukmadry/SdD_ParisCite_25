@@ -53,7 +53,19 @@ C'est donc assez proche d'une valeur attendue et l'addition de $0.05 * Z, Z \sim
 
 #### Exercices
 
-* Echanger $0.05$ dans l'exemple qu'on vient d'étudier avec les valeurs les plus grands. Notons ce paramètre $\sigma$. Etudier l'influence sur la covariance et faire une graphe de covariance en fonction de $\sigma$. Vous pouvez prendre par exemple $\sigma \in \{0.05, 0.25, 0.5, 1, 2, 10, 100}$
+* Echanger $0.05$ dans l'exemple qu'on vient d'étudier avec les valeurs les plus grands. Notons ce paramètre $\sigma$. Etudier l'influence sur la covariance et faire une graphe de covariance en fonction de $\sigma$. Vous pouvez prendre par exemple $\sigma \in \{0.05, 0.25, 0.5, 1, 2, 10, 100}$.
+
+Comment ca se compare aux predictions theoriques ? Mettre votre code dans l'espace ci-dessous.
+
+```{r}
+sigmas <- c(0.05, 0.25, 0.5, 1, 2, 10, 100)
+
+for (s in sigmas){
+  u <- a*x + s * rnorm(N)
+  
+  # CODE POUR LE CALCUL DE COVARIANCE ICI
+}
+```
 
 ### Analyse bivariee des valeurs numeriques et des facteurs
 
@@ -102,7 +114,9 @@ Ce qui n'est pas du tout etonnant ! On a vu en cours que pour les variables $Y,X
 
 \[ a = \frac{\text{Cov}(X,Y)}{\text{Var}(X)} \quad b = \bar{Y}^n - \rho_{XY} \frac{\sigma_Y}{\sigma_X} \bar{X}^n  \]
 
-### Exercice
+### Exercices
+
+(seulement si vous avancez très vite, sinon vous pouvez sauter)
 
 * Avec `cov, var, mean` vérifier que les valeurs qu'on vient d'obtenir avec `lm` sont correctes.
 * Ecrire votre propre fonction `regression` qui va prendre deux vecteurs numeriques `x,y` et renvoyer `a,b` comme donne par les expression au-dessus. 
@@ -119,7 +133,7 @@ m <- a*x + b + 0.1 * rnorm(N)
 
 lm(m ~ x)
 ```
-** Est-ce qu'on peut prévoir la difference en `x` en fonction de taille d'un bruit ? Similaire au calcul de covariance, etudier l'influence de $\sigma$, c'est-a-dire- une parametre qui va remplacer `0.1` dans le code au-dessus, sur les coefficients `a,b`.
+
 ** Est-ce que le changement de forme d'un bruit va changer quelque chose ? Au lieu de `rnorm` utiliser une autre fonction qui va génerer un bruit et calculer les coefficients.
 
 Qu'est-ce qu'on va obtenir si on va prendre les donnees non-lineaires ?
@@ -256,3 +270,33 @@ p <- anscombe_long %>%
 ```
 
 On voit bien qu'il y a une regression qui est mieux que les autres. Les colonnes 2 et 4 n'ont pas de dependence lineaire entre `x` et `y`. Est-ce que qualite de regression correspond aux erreurs absolutes que vous avez calcules tout de suite ?
+
+### Fausse correlation
+
+Ici on va regarder soi-distant fausse correlation. D'abord, lancez le code suivant : il va telecharger les donnees dont on va avoir besoin.
+
+```{r}
+marriages_chemin <- here(path_data, "marriages.csv")
+marriages_url <- "https://github.com/lukmadry/SdD_ParisCite_25/blob/main/marriages.csv"
+prenoms_chemin <- here(path_data, "prenoms_selection.csv")
+prenoms_url <- "https://github.com/lukmadry/SdD_ParisCite_25/blob/main/prenoms_selection.csv"
+
+if (!file.exists(mariages_chemin)) {
+  download.file(marriages_url, mariages_chemin, mode = "wb")
+}
+
+if (!file.exists((prenoms_chemin))){
+  download.file(prenoms_url, prenoms_chemin, mode = "wb")
+}
+
+mariages <- read_csv(marriages_chemin, sep=";")
+prenoms <- read_csv(prenoms_chemin, sep=",")
+```
+
+Exercices:
+* Calculer le nombre d'enfants avec le prénom "Camille" par an. 
+* À partir de la, faites régression avec le nombre de mariages
+* Qu'observez-vous ? Est-ce que c'est raisonnable de dire que le nombre d'enfants avec le prenom "Camille" est correlé avec le nombre de mariages en France ? Sinon, quelle hypothèse de régression est brisée ici ?
+* Regarder les mesures de qualité de regression discutés avant.
+
+Vous pouvez aussi regarder les autres prénoms que Camille, mais pour celui-là l'effet est bien frappant.
