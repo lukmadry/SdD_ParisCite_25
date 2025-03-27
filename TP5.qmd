@@ -164,3 +164,23 @@ Questions:
 ** Appliquer cette fonction aux $N=10000$ joueurs (si c'est trop lente, vous pouvez faire $N=1000$)
 ** Combien de jouers finissent avec le capital plus grand que 10 ? Est-ce que consistent avec les prediction theoriques ? Calculer le moyenne, le mediane et les quantiles $1/10, 1/4, 3/4, 9/10$.
 ** Tracer une histogram du capital possede par la population. En moyenne, est-ce qu'on a plus ou moins du capital ? Diriez-vous que la population s'est appauvri ou s'est enrichi ?
+
+
+```{r}
+mult <- 5
+jeu <- function(throws=10){
+  s <- 1
+  for (i in 1:throws){
+    if (runif(1) < 1/2){
+      s <- mult*s
+    } else {
+      s <- 0
+    }
+  }
+  return(s)
+}
+
+N <- 10000
+throw_list <- rep(10, N)
+res <- sapply(throw_list, jeu)
+```
