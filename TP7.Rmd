@@ -1,0 +1,148 @@
+---
+title: "TP7"
+author: "Łukasz Mądry"
+date: "2025-02-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Analyse bivarie
+
+
+```{r}
+T <- tribble(~ Left, ~ Center, ~ Right,
+             762, 327, 468,
+             484, 239, 477)
+rownames(T) <- c('Women', 'Men')
+T <- as.matrix(T)
+```
+
+on peut facilement trouver une somme des colonnes et les lignes.
+```{r}
+T <- as.table(T)
+margin.table(T, 1)
+margin.table(T, 2)
+```
+
+## Exercices
+* faire une moisaicplot de $T$
+* calculer la statistique de Pearson et faire une teste pour l'independance
+
+# Plus de donnes multicategoriels
+
+```{r}
+data("UCBAdmissions")
+UCBA_long <- UCBAdmissions |> 
+  as_tibble() |> 
+  select(Gender, Dept, Admit, n) |> 
+  arrange(Gender, Dept, Admit)
+```
+
+## Exercices
+* faire une mosaicplot pour Gender et Admit, calculer la statistique de Pearson
+* faire des tests de Pearson pour chaque valeur de Dept.
+
+
+# Analyse de composantes principales
+
+```{r}
+df <- read.csv("abalone.data", header=FALSE)
+columns <- c("Sex", "Length", "Diameter", "Height", "Whole weight", "Rings", "Shucked weight", "Viscera weight","Shell weight")
+colnames(df) <- columns
+```
+
+
+## Exercices
+* Effectuer ACP sur les valeurs numeriques dans `df`. Pensez bien a standardiser et reduire les valeurs si besoin.
+* Faire un screeplot, calculer les contributions de variables (en gros, refaire les analyse du CM sur ce donnees)
+* Faire une histogram (ou graphe XY) de premieres composants principales en fonction de valeurs dans colonne "Sex" Est-ce qu'il y a du lien ? 
+
+
+
+# ACP sur la tableau de donnees large
+
+```{r}
+golub <- read.csv("golub.csv", header=TRUE)
+```
+
+Dans la suite, on va considerer transpose de golub (!)
+
+## Exercices
+
+* Effectuer l'analyse similaire. Combien de components peut-on choisir pour avoir 90% de variance explique ? 95 %? 99% ?
+
+# ACP sur les donnees artificiels
+
+Il n'est pas toujours possible de reduire de donnes en une colonne sans perdre beaucoup d'information. Ca sera illustre par l'exemple suivante.
+
+```{r}
+x <- matrix(rnorm(300), nrow=100)
+y <- matrix(nrow=100, ncol=3)
+y[, 1] <- x[, 1]
+y[, 2] <- x[, 1] / sqrt(2) + x[,2] / sqrt(2)
+y[, 3] <- x[, 3] / sqrt(3) + x[,1] / sqrt(3) + x[,2] / sqrt(3)
+```
+
+Covariance:
+```{r}
+cov(y)
+```
+
+```{r}
+prcomp(y, center=TRUE, scale=TRUE)
+```
+
+On voit qu'il n'y a pas de component qui explique toute la variance. 
+
+## Exercices
+* Dans l'exemple au-dessus, pourquoi il n'est pas possible de reduire les dimension a seulement un component ?
+* (seulement si vous avancez tres rapidement, sinon a sauter) A partir de la, essayer de creer un exemple similaire avec 5 colonnes tel qu'on pourra reduire le nombre de colonnes a 1 en perdant seulement 10% de variance.
+
+Indication : on pourra le faire si beaucoup de contenu d'autres colonnes sera possible d'expliquer a partir d'une colonne. 
+
+
+# PCA et la compression d'images
+
+On va voir qu'on peut essayer du PCA pour reduire diminuer la taille d'image (donc faire la compression).
+
+```{r}
+faces <- read.csv("faces.csv", header=FALSE, sep=";")
+```
+
+```{r}
+obtenir_visage <- function(k){
+  d <- matrix(unlist(faces[k,]), nrow=32)
+  d <- t(d)
+  d <- d[, ncol(d):1]
+}
+
+paraitre_visage <- function(k){
+  d <- obtenir_visage(k)
+  image(d, col=gray.colors(33))
+}
+```
+
+
+```{r}
+face_pca <- prcomp(faces)
+```
+
+## Exercices
+
+* etudier le code donne au-dessus et faire paraitre les images de valeurs propres. Qu'en observez-vous ?
+
+
+# K-moyennes
+
+On va etudier l'algorithme du clustering. 
+
+## Exercices
+* Appliquer k-moyennes aux donnees abalone etudies au-dessus, sans la premiere colonne. Est-ce que clusters trouves sont proches de colonee "Sex" ? Faire une graphique de deux premieres composants principales avec le cluster indique.
+
+Essayons de comprendre un peu le comportement du k-means. 
+* Avec `rnorm` generer quelques clusters (par exemple $N = 10$) du donnes suffisament eloignes. Lancer l'algorithme k-moyennes avec $K=2, K=5$. Qu'en observez vous ? Quels clusters sont choisis ? Etudier l'influence du parametres, la distance choisi etc.
+* Inversement : faire la meme chose avec $N << K$.
